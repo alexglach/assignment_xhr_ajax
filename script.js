@@ -21,15 +21,8 @@ var $ = {
 
   ajax: function(options) {
 
-    return new Promise( function(resolve, reject) {
+    var promise = new Promise(function(resolve, reject) {
       var xhr = new XMLHttpRequest();
-
-      // promise object
-      // default options
-      // var defaultOptions = {
-      //   contentType: "contentType",
-      //   headers: {},
-      // }
 
       xhr.onload = function(e) {
         if (xhr.readyState === 4) {
@@ -46,11 +39,9 @@ var $ = {
 
       xhr.onerror = function(e) {
         options.error;
+        reject(this.statusText);
       };
       xhr.open(options.method, options.url, options.async);
-      // if (options.content) {
-      //   var contentType = options.content
-      // }
       if (options.header) {
         for (var key in options.header) {
           xhr.setRequestHeader(key, options.headers[key]);
@@ -69,9 +60,10 @@ var $ = {
       }
       xhr.send(url);
     });
+    return promise;
   },
 
-  get: function( url, data, success) {
+  get: function(url, data, success) {
     var getOptions = {
       url: url,
       method: "GET",
@@ -85,10 +77,10 @@ var $ = {
       success: success,
       data: data,
     };
-    $.ajax(getOptions);
+    return $.ajax(getOptions);
   },
 
-  post: function( url, data, success) {
+  post: function(url, data, success) {
     var postOptions = {
       url: url,
       method: "POST",
@@ -105,8 +97,9 @@ var $ = {
         "Content-type": "application/x-www-form-urlencoded"
       }
     }
-    $.ajax(postOptions);
+    return $.ajax(postOptions);
   }
+
 
 }
 
@@ -151,6 +144,47 @@ var optionsPost = {
   }
 }
 
+// button to trigger multiple callbacks.
+var button = document.getElementById("kick-off")
+button.addEventListener("click", function() {
+  var postRequest = $.post("http://reqres.in/api/users", "title=Foo&body=Bar&userId=1", function() {
+    console.log("the post request worked")
+  })
+  setTimeout(function(){
+    var getRequest = $.get("http://reqres.in/api/users", null, function() {
+      console.log("the get request worked")
+    });
+  }, 2000);
 
-$.post("http://reqres.in/api/users", "title=Foo&body=Bar&userId=1", optionsPost.success)
+  var ajaxRequest = $.get("http://reqres.in/api/users", null, function() {
+    console.log("the 2nd get request worked")
+  });
+  var multiPromise = new Promise(function(resolve, reject){
+    var allDone = false
+    var status = document.getElementById("status")
+    while (allDone === false){
+      if (postRequest.done && getRequest.done && ajaxRequest.done) {
+        allDone = true
+      } else {
+        status.innerHTML = "Loading";
+      }
+    }
+    status.innerHTML = "Loaded";
+  });
+});
 
+
+
+
+var promiseObject = $.post("http://reqres.in/api/users", "title=Foo&body=Bar&userId=1", optionsPost.success)
+promiseObject.then(function() {
+    console.log("promise success!");
+    return "string";
+  })
+  .then(function(response) {
+    throw new Error("this is an error!");
+    console.log(response);
+  })
+  .catch(function(error) {
+    console.error(error);
+  })
