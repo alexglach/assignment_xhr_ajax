@@ -147,30 +147,26 @@ var optionsPost = {
 // button to trigger multiple callbacks.
 var button = document.getElementById("kick-off")
 button.addEventListener("click", function() {
+  var status = document.getElementById("status")
+  status.innerHTML = "Loading";
   var postRequest = $.post("http://reqres.in/api/users", "title=Foo&body=Bar&userId=1", function() {
     console.log("the post request worked")
   })
-  setTimeout(function(){
-    var getRequest = $.get("http://reqres.in/api/users", null, function() {
-      console.log("the get request worked")
-    });
-  }, 2000);
+  var getRequest = new Promise( function(resolve, reject) {
+    setTimeout(function(){
+      $.get("http://reqres.in/api/users", null, function() {
+      console.log("the get request worked")});
+      resolve();
+    }, 2000);
+  });
 
   var ajaxRequest = $.get("http://reqres.in/api/users", null, function() {
     console.log("the 2nd get request worked")
   });
-  var multiPromise = new Promise(function(resolve, reject){
-    var allDone = false
-    var status = document.getElementById("status")
-    while (allDone === false){
-      if (postRequest.done && getRequest.done && ajaxRequest.done) {
-        allDone = true
-      } else {
-        status.innerHTML = "Loading";
-      }
-    }
-    status.innerHTML = "Loaded";
-  });
+  Promise.all([postRequest, ajaxRequest, getRequest]).then(
+    function(){status.innerHTML = "Loaded"
+    console.log("You did it!")}
+  );
 });
 
 
